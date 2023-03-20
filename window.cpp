@@ -48,12 +48,12 @@ int Window::start(){
     
     int width, height;
     glfwGetWindowSize(m_GLFWwindow, &width, &height);
-    glfwGetFramebufferSize(m_GLFWwindow, &width, &height);
+    //glfwGetFramebufferSize(m_GLFWwindow, &width, &height);
 
     glfwSwapInterval(1);
 
     // Set up core now that windowing and opengl are set up
-    m_core = new Core();
+    m_core = new Core(width, height);
     if(!m_core){
         return -1;
     }
@@ -87,7 +87,9 @@ int Window::loop(){
     while (!glfwWindowShouldClose(m_GLFWwindow))
     {
         glfwPollEvents();
-        int updateResult = m_core->update();
+        double current = glfwGetTime();
+        int updateResult = m_core->update(current - previous);
+        previous = current;
         if(updateResult != 0){
             return updateResult;
         }

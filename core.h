@@ -5,13 +5,18 @@
 
 #include <iostream>
 #include <memory>
+#include "camera.h"
+#include "water.h"
+#include "shaderloader.h"
+
+#include <set>
 
 class Core
 {
 public:
-    Core();
+    Core(int width, int height);
     ~Core();
-    int update();
+    int update(float seconds);
     int draw();
     void keyEvent(int key, int action);
     void mousePosEvent(double xpos, double ypos);
@@ -19,4 +24,12 @@ public:
     void scrollEvent(double distance);
     void windowResizeEvent(int width, int height);
     void framebufferResizeEvent(int width, int height);
+
+private:
+    GLuint m_shader;
+    std::unique_ptr<Water> m_water;
+    std::unique_ptr<Camera> m_camera;
+
+    bool m_mouseDown = false;
+    std::set<int> m_keysDown = std::set<int>();
 };
