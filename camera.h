@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+#include <glad/glad.h>
+
 class Camera{
 public:
     Camera(int width, int height, glm::vec3 pos, glm::vec3 look, glm::vec3 up, float fov, float near, float far);
@@ -17,6 +19,8 @@ public:
 
     glm::vec3 getLook();
     glm::vec3 getPos();
+
+    void setCameraUniforms(GLuint shader);
     
 private:
     void calculateProjection();

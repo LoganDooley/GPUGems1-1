@@ -37,6 +37,11 @@ glm::vec3 Camera::getPos(){
     return m_pos;
 }
 
+void Camera::setCameraUniforms(GLuint shader){
+    glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
+    glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(m_proj));
+}
+
 void Camera::resize(int width, int height){
     m_width = width;
     m_height = height;

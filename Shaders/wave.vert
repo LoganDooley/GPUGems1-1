@@ -1,49 +1,80 @@
 #version 330 core
 
 layout (location = 0) in vec3 pos;
-layout (location = 1) in vec3 norm;
 
-uniform float L;
-uniform float Q;
-uniform float A;
-uniform float S;
-uniform float t;
-uniform vec2 D;
+struct Wave{
+    float wavelength;
+    float steepness;
+    float dispersion;
+    float wavenumber;
+    float amplitude;
+    vec2 direction;
+};
+
+uniform Wave waves[16];
+
+uniform int numWaves = 0;
+
+uniform float t = 0;
 
 uniform mat4 view, projection;
 
 out vec3 worldSpace_pos;
 out vec3 worldSpace_norm;
 
-vec3 gerstnerWavePos(vec2 xz, float Q, float A, vec2 D, float w, float phi, float t){
-    float x = xz.x + Q * A * D.x * cos(w * dot(D, xz) + phi * t);
-    float z = xz.y + Q * A * D.y * cos(w * dot(D, xz) + phi * t);
-    float y = A * sin(w * dot(D, xz) + phi * t);
+vec3 gerstnerWavePos(vec2 xz, float t){
+    float x = xz.x;
+    float z = xz.y;
+    float y = 0;
+
+    for(int i = 0; i<numWaves; i++){
+        float Ai = waves[i].amplitude;
+        vec2 Di = waves[i].direction;
+        float wi = waves[i].wavenumber;
+        float phii = waves[i].dispersion;
+        float Qi = waves[i].steepness / (wi * Ai * numWaves);
+
+        float arg = wi * dot(Di, xz) + phii * t;
+        float cosarg = cos(arg);
+        float sinarg = sin(arg);
+
+        x += Qi * Ai * Di.x * cosarg;
+        z += Qi * Ai * Di.y * cosarg;
+        y += Ai * sinarg;
+    }
+
     return vec3(x, y, z);
 }
 
-vec3 gerstnerWaveNorm(vec2 xz, float A, vec2 D, float w, float phi, float t){
-    float WA = w * A;
-    float C = cos(w * dot(D, xz) + phi * t);
-    float S = sin(w * dot(D, xz) + phi * t);
-    
-    float x = -D.x * WA * C;
-    float z = -D.y * WA * C;
-    float y = 1 - Q * WA * S;
+vec3 gerstnerWaveNorm(vec2 xz, float t){
+    float x = 0;
+    float z = 0;
+    float y = 1;
+
+    for(int i = 0; i<numWaves; i++){
+        float Ai = waves[i].amplitude;
+        vec2 Di = waves[i].direction;
+        float wi = waves[i].wavenumber;
+        float phii = waves[i].dispersion;
+        float Qi = waves[i].steepness / (wi * Ai * numWaves);
+
+        float WA = wi * Ai;
+        float arg = wi * dot(Di, xz) + phii * t;
+        float cosarg = cos(arg);
+        float sinarg = sin(arg);
+
+        x -= Di.x * WA * cosarg;
+        z -= Di.y * WA * cosarg;
+        y -= Qi * WA * sinarg;
+    }
 
     return vec3(x, y, z);
 }
 
 void main() {
-    vec2 Dn = normalize(D);
-    float w = 2/L;
-    float phi = S * 2/L;
-    float Qp = Q/(w * A);
-
     vec2 xz = vec2(pos.x, pos.z);
-    worldSpace_pos = gerstnerWavePos(xz, Qp, A, Dn, w, phi, t);
-    xz = vec2(worldSpace_pos.x, worldSpace_pos.z);
-    worldSpace_norm = gerstnerWaveNorm(xz, A, Dn, w, xz, phi, t);
+    worldSpace_pos = gerstnerWavePos(xz, t);
+    worldSpace_norm = gerstnerWaveNorm(xz, t);
 
     gl_Position = projection * view * vec4(worldSpace_pos, 1);
 }

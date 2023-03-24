@@ -1,6 +1,7 @@
 #include "water.h"
 #include <iostream>
 #include "debug.h"
+#include <string>
 
 Water::Water(glm::vec2 size, unsigned int resolution){
     std::vector<float> data;
@@ -24,13 +25,11 @@ Water::Water(glm::vec2 size, unsigned int resolution){
     glGenVertexArrays(1, &m_vao);
     glBindVertexArray(m_vao);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<GLvoid*>(0));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<GLvoid*>(3 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), reinterpret_cast<GLvoid*>(0));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    m_size = data.size() / 6;
+    m_numVerts = data.size() / 3;
 }
 
 Water::~Water(){
@@ -45,6 +44,23 @@ void Water::unbind(){
     glBindVertexArray(0);
 }
 
-int Water::getSize(){
-    return m_size;
+int Water::getNumVerts(){
+    return m_numVerts;
+}
+
+void Water::addWave(float wavelength, float steepness, glm::vec2 direction){
+    m_waves.emplace_back(Wave(wavelength, steepness, direction));
+}
+
+void Water::setWaveUniforms(GLuint shader){
+    glUniform1i(glGetUniformLocation(shader, "numWaves"), m_waves.size());
+    for(int i = 0; i<m_waves.size(); i++){
+        std::string entry = std::string("waves[")+std::to_string(i)+std::string("]");
+        glUniform1f(glGetUniformLocation(shader, (entry+std::string(".wavelength")).c_str()), m_waves[i].m_wavelength);
+        glUniform1f(glGetUniformLocation(shader, (entry+std::string(".steepness")).c_str()), m_waves[i].m_steepness);
+        glUniform1f(glGetUniformLocation(shader, (entry+std::string(".dispersion")).c_str()), m_waves[i].m_dispersion);
+        glUniform1f(glGetUniformLocation(shader, (entry+std::string(".wavenumber")).c_str()), m_waves[i].m_wavenumber);
+        glUniform1f(glGetUniformLocation(shader, (entry+std::string(".amplitude")).c_str()), m_waves[i].m_amplitude);
+        glUniform2f(glGetUniformLocation(shader, (entry+std::string(".direction")).c_str()), m_waves[i].m_direction.x, m_waves[i].m_direction.y);
+    }
 }
